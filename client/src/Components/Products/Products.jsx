@@ -69,7 +69,7 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-20">
+    <div id="products" className="min-h-screen bg-stone-50 pb-20">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* MODERN HEADER */}

@@ -24,8 +24,6 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      {/* <Navbar /> */}
-
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
