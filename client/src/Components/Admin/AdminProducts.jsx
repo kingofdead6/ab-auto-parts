@@ -87,7 +87,7 @@ export default function AdminProducts() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-xl shadow-red-200 font-semibold"
+            className="cursor-pointer bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 transition shadow-xl shadow-red-200 font-semibold"
           >
             <Plus size={20}/> Ajouter une pièce
           </button>
@@ -135,10 +135,10 @@ export default function AdminProducts() {
               <div className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 truncate">{p.name}</h3>
                 <div className="flex gap-3 mt-6">
-                  <button onClick={() => { setEditingId(p._id); setForm({name: p.name, CarType: p.CarType, images: p.images.map(i=>({preview: i.url, url: i.url}))}); setShowModal(true); }} className="flex-1 flex justify-center items-center py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition">
+                  <button onClick={() => { setEditingId(p._id); setForm({name: p.name, CarType: p.CarType, images: p.images.map(i=>({preview: i.url, url: i.url}))}); setShowModal(true); }} className="cursor-pointer flex-1 flex justify-center items-center py-3 bg-gray-900 text-white rounded-xl hover:bg-black transition">
                     <Edit size={18} />
                   </button>
-                  <button onClick={() => handleDelete(p._id)} className="flex-1 flex justify-center items-center py-3 border-2 border-gray-100 text-red-500 rounded-xl hover:bg-red-50 transition">
+                  <button onClick={() => handleDelete(p._id)} className="cursor-pointer flex-1 flex justify-center items-center py-3 border-2 border-gray-100 text-red-500 rounded-xl hover:bg-red-50 transition">
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -154,7 +154,7 @@ export default function AdminProducts() {
               <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
                 <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                   <h2 className="text-2xl font-bold">{editingId ? "Éditer le produit" : "Nouveau produit"}</h2>
-                  <button onClick={resetForm} className="p-2 hover:bg-white rounded-full transition"><X /></button>
+                  <button onClick={resetForm} className="cursor-pointer p-2 hover:bg-red-500 rounded-full transition "><X /></button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
@@ -177,7 +177,7 @@ export default function AdminProducts() {
                       {form.images.map((img, i) => (
                         <div key={i} className="relative aspect-square rounded-2xl overflow-hidden group">
                           <img src={img.preview || img.url} className="w-full h-full object-cover" />
-                          <button type="button" onClick={() => setForm({...form, images: form.images.filter((_, idx)=> idx !== i)})} className="absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition"><X size={20}/></button>
+                          <button type="button" onClick={() => setForm({...form, images: form.images.filter((_, idx)=> idx !== i)})} className="cursor-pointer absolute inset-0 bg-red-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition"><X size={20}/></button>
                         </div>
                       ))}
                       {form.images.length < 3 && (
@@ -193,7 +193,7 @@ export default function AdminProducts() {
                     </div>
                   </div>
 
-                  <button className="w-full py-5 bg-red-600 text-white rounded-2xl font-bold text-lg hover:bg-red-700 transition shadow-xl shadow-red-100">
+                  <button className="cursor-pointer w-full py-5 bg-red-600 text-white rounded-2xl font-bold text-lg hover:bg-red-700 transition shadow-xl shadow-red-100">
                     {loading ? "Chargement..." : editingId ? "Enregistrer les modifications" : "Créer le produit"}
                   </button>
                 </form>
