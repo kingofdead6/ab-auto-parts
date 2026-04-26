@@ -5,6 +5,7 @@ import cors from 'cors';
 import authRoutes from './Routes/authRoutes.js';
 import { errorHandler } from './Middleware/error.js';
 import productRoutes from './Routes/productRoutes.js';
+import carnameRoutes from './Routes/carNameRoutes.js';
 
 dotenv.config();
 
@@ -21,7 +22,7 @@ mongoose
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-
+app.use('/api/car-names', carnameRoutes); 
 
 app.use(errorHandler);
 

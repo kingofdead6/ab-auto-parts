@@ -1,42 +1,41 @@
-// src/pages/admin/AdminDashboard.jsx
-import { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { LanguageContext } from "../context/LanguageContext";
-import { translations } from "../../../translations";
 
 export default function AdminDashboard() {
-  const { lang } = useContext(LanguageContext);
-  const t = translations[lang].adminDashboard;
-  const isRTL = lang === "ar";
   const navigate = useNavigate();
 
   const [userType, setUserType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const titleRef = useRef(null);
 
+  // Authentication check on component mount
   useEffect(() => {
     const checkToken = () => {
+      // 1. Get token
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token) {
-        toast.error(t.loginRequired);
+        toast.error("Connexion requise pour accéder au tableau de bord.");
         navigate("/login");
         return;
       }
 
       try {
+        // 2. Decode and check permissions
         const decoded = jwtDecode(token);
+        // Check if user is either admin or superadmin
         if (decoded.usertype === "admin" || decoded.usertype === "superadmin") {
           setUserType(decoded.usertype);
         } else {
-          toast.error(t.unauthorized);
-          navigate("/login");
+          toast.error("Accès non autorisé.");
+          navigate("/login"); // Redirect non-admins
         }
       } catch (error) {
-        toast.error(t.invalidToken);
+        // 3. Handle invalid tokens (e.g., malformed, expired)
+        toast.error("Session invalide, veuillez vous re-connecter.");
         navigate("/login");
       } finally {
         setIsLoading(false);
@@ -44,39 +43,35 @@ export default function AdminDashboard() {
     };
 
     checkToken();
-  }, [navigate, t]);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
-    toast.success(t.logoutSuccess);
+    toast.success("Déconnexion réussie.");
     navigate("/login");
   };
 
+  // Sections available to standard 'admin'
   const adminSections = [
-    { path: "/admin/orders", title: t.manageOrders, description: t.manageOrdersDesc },
-    { path: "/admin/products", title: t.manageProducts, description: t.manageProductsDesc },
-    { path: "/admin/gallery", title: "Manage Gallery", description: "Manage your gallery images" },
-    { path: "/admin/sell-requests", title: "Manage Sell Requests", description: "Manage user sell requests" },
-    { path: "/admin/contacts", title: "Manage Contact Messages", description: "Manage user contact messages" },
-    { path: "/admin/repair-requests", title: "Manage Repair Requests", description: "Manage user repair requests" }
+    { path: "/admin/products", title: "Gérer les Produits", description: "Ajouter, modifier ou supprimer des produits du catalogue de la boutique." },
+    { path: "/admin/car-names", title: "Gérer les Noms de Voitures", description: "Ajouter, modifier ou supprimer les noms de voitures dans le catalogue." }
   ];
 
+  // Sections available only to 'superadmin'
   const superadminSections = [
     ...adminSections,
-    { path: "/admin/users", title: t.manageUsers, description: t.manageUsersDesc },
-    { path: "/admin/categories", title: t.manageCategories, description: t.manageCategoriesDesc },
-    { path: "/admin/delivery-areas", title: t.manageDeliveryAreas, description: t.manageDeliveryAreasDesc },
-    
-
+    { path: "/admin/users", title: "Gérer les Utilisateurs", description: "Administration de tous les comptes utilisateurs, y compris les autres administrateurs." },
+   
   ];
 
+  // Determine available sections based on the authenticated userType
   const sections = userType === "superadmin" ? superadminSections : adminSections;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-xl font-light text-gray-600">{t.loading}</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-xl font-light text-gray-700">Chargement...</p>
       </div>
     );
   }
@@ -87,8 +82,8 @@ export default function AdminDashboard() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7 }}
-        className="min-h-screen py-20 pt-32 "
-        dir={isRTL ? "rtl" : "ltr"}
+        className="min-h-screen py-20 pt-32 bg-white"
+        dir="ltr" // Hardcoded to LTR for French
       >
         <div className="max-w-7xl mx-auto px-6">
           {/* Header */}
@@ -98,9 +93,9 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, y: -40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, ease: "easeOut" }}
-              className="text-6xl font-extralight tracking-widest text-gray-900"
+              className="text-6xl font-extralight tracking-widest text-gray-950"
             >
-              {userType === "superadmin" ? t.welcomeSuperAdmin : t.welcomeAdmin}
+              {userType === "superadmin" ? "Bienvenue Super Admin" : "Bienvenue Admin"}
             </motion.h1>    
           </div>
 
@@ -121,19 +116,21 @@ export default function AdminDashboard() {
                 className="group"
               >
                 <Link to={section.path}>
-                  <div className="bg-white rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-400 h-full flex flex-col justify-between border border-gray-100">
+                  <div className="bg-white rounded-3xl p-10 shadow-lg hover:shadow-2xl transition-all duration-400 h-full flex flex-col justify-between border border-gray-100 group-hover:border-red-200">
                     <div>
-                      <h2 className="text-3xl font-medium text-gray-900 group-hover:text-black transition-colors">
+                      {/* Changed group-hover:text-black to group-hover:text-red-700 */}
+                      <h2 className="text-3xl font-medium text-gray-950 group-hover:text-red-700 transition-colors">
                         {section.title}
                       </h2>
-                      <p className="mt-5 text-gray-600 font-light leading-relaxed text-lg">
+                      <p className="mt-5 text-gray-700 font-light leading-relaxed text-lg">
                         {section.description}
                       </p>
                     </div>
                     <div className="mt-10 flex justify-end">
-                      <span className="inline-flex items-center text-lg font-semibold text-gray-600 group-hover:text-black transition-all">
-                        {t.manage}
-                        <svg className={`w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform ${isRTL ? "mr-3 ml-0 rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {/* Changed from text-gray-600 to text-red-600 */}
+                      <span className="inline-flex items-center text-lg font-semibold text-red-600 group-hover:text-red-800 transition-all">
+                        Gérer
+                        <svg className={`w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </span>
@@ -150,7 +147,7 @@ export default function AdminDashboard() {
               onClick={handleLogout}
               className="cursor-pointer px-12 py-5 bg-red-600 text-white text-xl font-medium rounded-2xl hover:bg-red-700 transition-all duration-300 shadow-xl hover:shadow-2xl"
             >
-              {t.logout}
+              Se déconnecter
             </button>
           </div>
         </div>

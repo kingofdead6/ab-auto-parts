@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../api";
@@ -12,119 +13,165 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("Toutes les catégories");
-  const [availableCategories, setAvailableCategories] = useState([]);
+
+  const [selectedCar, setSelectedCar] = useState("Tous les véhicules");
+  const [availableCars, setAvailableCars] = useState([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const productsPerPage = 9;
 
-  // Read category from URL
+  // Sync URL params
   useEffect(() => {
-    const categoryFromUrl = searchParams.get("category");
-    setSelectedCategory(categoryFromUrl || "Toutes les catégories");
+    const carFromUrl = searchParams.get("car");
+    const searchFromUrl = searchParams.get("search");
+
+    if (carFromUrl) setSelectedCar(carFromUrl);
+    if (searchFromUrl) setSearchTerm(searchFromUrl);
   }, [searchParams]);
 
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/products/featured`);
+        const res = await axios.get(`${API_BASE_URL}/products`);
         const allProducts = res.data || [];
+
         setProducts(allProducts);
 
-        const uniqueCategories = [
-          ...new Set(allProducts.map((p) => p.category).filter(Boolean)),
+        const uniqueCars = [
+          ...new Set(allProducts.map((p) => p.CarType).filter(Boolean)),
         ];
-        setAvailableCategories(["Toutes les catégories", ...uniqueCategories.sort()]);
+
+        setAvailableCars(["Tous les véhicules", ...uniqueCars.sort()]);
       } catch (err) {
         toast.error("Erreur lors du chargement des produits");
       } finally {
         setLoading(false);
       }
     };
+
     fetchProducts();
   }, []);
 
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
+  // Handle filters
+  const handleCarChange = (car) => {
+    setSelectedCar(car);
     setCurrentPage(1);
 
-    if (category === "Toutes les catégories") {
-      navigate("/products", { replace: true });
-    } else {
-      navigate(`/products?category=${encodeURIComponent(category)}`, { replace: true });
-    }
+    updateURL(car, searchTerm);
   };
 
-  const filteredProducts = React.useMemo(() => {
-    if (selectedCategory === "Toutes les catégories") return products;
-    return products.filter((p) => p.category === selectedCategory);
-  }, [products, selectedCategory]);
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+
+    updateURL(selectedCar, value);
+  };
+
+  const updateURL = (car, search) => {
+    const params = new URLSearchParams();
+
+    if (car && car !== "Tous les véhicules") {
+      params.set("car", car);
+    }
+
+    if (search) {
+      params.set("search", search);
+    }
+
+    navigate(`?${params.toString()}`, { replace: true });
+  };
+
+  // Filtering logic
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchCar =
+        selectedCar === "Tous les véhicules" || p.CarType === selectedCar;
+
+      const matchSearch =
+        p.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchCar && matchSearch;
+    });
+  }, [products, selectedCar, searchTerm]);
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage
   );
 
   const clearFilters = () => {
-    setSelectedCategory("Toutes les catégories");
+    setSelectedCar("Tous les véhicules");
+    setSearchTerm("");
     setCurrentPage(1);
-    navigate("/products", { replace: true });
-    setIsFilterOpen(false);
   };
 
-  const hasActiveFilter = selectedCategory !== "Toutes les catégories";
+  const hasActiveFilter =
+    selectedCar !== "Tous les véhicules" || searchTerm !== "";
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="text-3xl font-light text-stone-600 animate-pulse">
-          Chargement...
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        Chargement...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 py-25 "> {/* Extra bottom padding for mobile button */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Header */}
-        <div className="mb-10 text-center sm:text-left">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-stone-950">
-            Nos Produits
-          </h1>
-          <p className="mt-3 text-lg sm:text-xl text-stone-600">
-            {filteredProducts.length} produit{filteredProducts.length > 1 ? "s" : ""} trouvé
-            {hasActiveFilter && ` dans "${selectedCategory}"`}
+    <div className="min-h-screen bg-stone-50 py-20">
+      <div className="max-w-7xl mx-auto px-4">
+
+        {/* HEADER */}
+        <div className="mb-10">
+          <h1 className="text-4xl font-bold">Pièces automobiles</h1>
+
+          <p className="text-stone-600 mt-2">
+            {filteredProducts.length} résultat
+            {filteredProducts.length > 1 ? "s" : ""}
           </p>
+
+          {/* SEARCH */}
+          <div className="mt-6">
+            <input
+              type="text"
+              placeholder="Rechercher une pièce (ex: filtre, moteur...)"
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full md:w-96 px-5 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
-          {/* Desktop Sidebar */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-24 bg-white rounded-3xl p-8 border border-stone-100 shadow-sm">
-              <h3 className="text-lg font-semibold mb-6">Catégories</h3>
-              <div className="space-y-1">
-                {availableCategories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => handleCategoryChange(cat)}
-                    className={`w-full text-left px-5 py-3.5 rounded-2xl text-sm font-medium transition-all ${
-                      selectedCategory === cat
-                        ? "bg-stone-900 text-white"
-                        : "hover:bg-stone-100 text-stone-700"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+        <div className="flex gap-10">
+
+          {/* SIDEBAR */}
+          <aside className="hidden lg:block w-64">
+            <div className="bg-white p-6 rounded-2xl shadow-sm">
+              <h3 className="font-semibold mb-4">Véhicules</h3>
+
+              {availableCars.map((car) => (
+                <button
+                  key={car}
+                  onClick={() => handleCarChange(car)}
+                  className={`block w-full text-left px-4 py-2 rounded-lg mb-1 ${
+                    selectedCar === car
+                      ? "bg-red-600 text-white"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  {car}
+                </button>
+              ))}
+
               {hasActiveFilter && (
                 <button
                   onClick={clearFilters}
-                  className="mt-8 w-full py-3 text-red-600 font-medium hover:text-red-700"
+                  className="mt-4 text-red-600"
                 >
                   Réinitialiser
                 </button>
@@ -132,72 +179,68 @@ export default function ProductsPage() {
             </div>
           </aside>
 
-          {/* Main Content */}
+          {/* PRODUCTS */}
           <main className="flex-1">
             {displayedProducts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-3xl border">
-                <p className="text-2xl">Aucun produit trouvé</p>
-                <button onClick={clearFilters} className="mt-6 text-blue-700 underline">
-                  Voir tous les produits
-                </button>
+              <div className="text-center py-20">
+                Aucun produit trouvé
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   {displayedProducts.map((product) => (
                     <motion.div
                       key={product._id}
-                      initial={{ opacity: 0, y: 15 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group bg-white rounded-3xl overflow-hidden border border-stone-100 hover:shadow-xl transition-all active:scale-[0.98]"
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition"
                     >
-                      <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden">
+                      <Link to={`/${product._id}`}>
                         <img
                           src={product.images?.[0]?.url || "/placeholder.jpg"}
                           alt={product.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading="lazy"
+                          className="w-full h-48 object-cover"
                         />
                       </Link>
-                      <div className="p-5">
-                        <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+
+                      <div className="p-4">
+                        <h3 className="font-semibold">
                           {product.name}
                         </h3>
-                        {product.category && (
-                          <p className="text-xs text-blue-700 mt-1">{product.category}</p>
-                        )}
-                        <div className="mt-4 flex justify-between items-center">
-                          <span className="text-2xl font-medium">
-                            {product.price?.toLocaleString()} DA
-                          </span>
-                          <Link
-                            to={`/product/${product._id}`}
-                            className="text-blue-700 font-medium text-sm"
-                          >
-                            Détails →
-                          </Link>
-                        </div>
+
+                        <p className="text-sm text-gray-500">
+                          {product.CarType}
+                        </p>
+
+                        <Link
+                          to={`/${product._id}`}
+                          className="text-red-600 text-sm mt-2 inline-block"
+                        >
+                          Voir détails →
+                        </Link>
                       </div>
                     </motion.div>
                   ))}
                 </div>
 
-                {/* Pagination */}
+                {/* PAGINATION */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center gap-2 mt-12 flex-wrap">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => setCurrentPage(n)}
-                        className={`w-10 h-10 rounded-2xl transition-all ${
-                          n === currentPage
-                            ? "bg-stone-900 text-white"
-                            : "border hover:bg-stone-100"
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+                  <div className="flex justify-center mt-10 gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (n) => (
+                        <button
+                          key={n}
+                          onClick={() => setCurrentPage(n)}
+                          className={`w-10 h-10 rounded-lg ${
+                            n === currentPage
+                              ? "bg-black text-white"
+                              : "border"
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </>
@@ -205,89 +248,6 @@ export default function ProductsPage() {
           </main>
         </div>
       </div>
-
-      {/* ==================== MOBILE FILTER BUTTON ==================== */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 mt-8 md:hidden">
-  <button
-    onClick={() => setIsFilterOpen(true)}
-    className="w-full py-4 bg-black border text-white border-black rounded-xl font-medium flex items-center justify-center gap-2.5  hover:shadow-md transition-all"
-  >
-    Filtrer par catégorie
-  </button>
-</div>
-
-      {/* ==================== MOBILE FILTER DRAWER ==================== */}
-      <AnimatePresence>
-        {isFilterOpen && (
-  <>
-    {/* Overlay */}
-    <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999]"
-      onClick={() => setIsFilterOpen(false)}
-    />
-
-    {/* Drawer */}
-    <div className="fixed inset-x-0 bottom-20 z-[1000] bg-white rounded-t-3xl max-h-[82vh] overflow-y-auto shadow-2xl border-t border-stone-200">
-      <div className="p-6 pb-10">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-semibold text-stone-900">
-            Catégories
-          </h2>
-
-          <button
-            onClick={() => setIsFilterOpen(false)}
-            className="p-3 hover:bg-stone-100 rounded-full transition"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Categories */}
-        <div className="space-y-12">
-          {availableCategories.length > 1 && (
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-5">
-                Catégorie
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4">
-                {availableCategories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      handleCategoryChange(cat); // ✅ URL sync
-                      setIsFilterOpen(false);
-                    }}
-                    className={`py-3.5 px-5 rounded-2xl text-sm font-medium transition-all border ${
-                      selectedCategory === cat
-                        ? "bg-blue-700 border-blue-600 text-white shadow-md"
-                        : "bg-white border-stone-300 text-stone-700 hover:border-blue-500 hover:text-blue-800"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Clear */}
-          {hasActiveFilter && (
-            <button
-              onClick={clearFilters}
-              className="w-full py-4 bg-stone-900 hover:bg-blue-800 text-white rounded-2xl font-medium transition shadow-md"
-            >
-              Réinitialiser les filtres
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  </>
-)}
-      </AnimatePresence>
     </div>
   );
 }

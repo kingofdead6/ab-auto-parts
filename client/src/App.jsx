@@ -16,20 +16,20 @@ import AdminUsers from "./Components/Admin/AdminUsers";
 
 import NotFound from "./Pages/NotFound";
 import ScrollToTop from "./Components/Shared/ScrollToTop";
-import Hero from "./Components/Home/Hero";
+import HomePage from "./Pages/HomePage";
+import AdminCarNames from "./Components/Admin/AdminCarNames";
 
 
 function App() {
   return (
     <Router>
       <ScrollToTop />
-      <Navbar />
+      {/* <Navbar /> */}
 
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Hero />} />
-        <Route path="/products" element={<ProductsPage />} />           
-        <Route path="/product/:id" element={<ProductDetailsPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/:id" element={<ProductDetailsPage />} />
         <Route path="/login" element={<Login />} />
         
         {/* Protected Admin Routes */}
@@ -37,6 +37,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/car-names" element={<AdminCarNames />} />
         </Route>
 
         {/* 404 Route */}

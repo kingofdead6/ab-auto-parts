@@ -19,8 +19,8 @@ router.get('/featured', getFeaturedProducts);
 router.get('/:id', getProductById);
 
 // Admin routes
-router.post('/', upload.array('images', 10), createProduct);
-router.put('/:id', upload.array('images', 10), updateProduct);
+router.post('/', upload.array('images', 3), createProduct);
+router.put('/:id', upload.array('images', 3), updateProduct);
 router.patch('/:id/toggle-products-page',  toggleShowOnProductsPage);
 router.delete('/:id', deleteProduct);
 
