@@ -1,23 +1,21 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Navbar from "./Components/Shared/NavBar";
 import Footer from "./Components/Shared/Footer";
 
-import ProductsPage from "./Components/Products/Products";   
 import ProductDetailsPage from "./Components/Products/ProductDetails";
-
+import HomePage from "./Pages/HomePage";
 import Login from "./Pages/Login";
+
 import ProtectedRoute from "./Components/Shared/ProtectedRoute";
 
 import AdminDashboard from "./Components/Admin/AdminDashboard";
 import AdminProducts from "./Components/Admin/AdminProducts";
-
 import AdminUsers from "./Components/Admin/AdminUsers";
+import AdminCarNames from "./Components/Admin/AdminCarNames";
 
 import NotFound from "./Pages/NotFound";
 import ScrollToTop from "./Components/Shared/ScrollToTop";
-import HomePage from "./Pages/HomePage";
-import AdminCarNames from "./Components/Admin/AdminCarNames";
+
 
 
 function App() {
