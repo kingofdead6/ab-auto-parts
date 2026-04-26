@@ -108,7 +108,7 @@ export default function ProductsPage() {
                   <button
                     key={car}
                     onClick={() => {setSelectedCar(car); updateURL(car, searchTerm);}}
-                    className={`flex items-center justify-between w-full text-left px-5 py-3 rounded-xl transition-all duration-300 font-medium ${
+                    className={`cursor-pointer flex items-center justify-between w-full text-left px-5 py-3 rounded-xl transition-all duration-300 font-medium ${
                       selectedCar === car ? "bg-red-600 text-white shadow-lg shadow-red-200 scale-105" : "text-stone-500 hover:bg-stone-50"
                     }`}
                   >
@@ -135,7 +135,7 @@ export default function ProductsPage() {
                   >
                     <div 
                         className="relative h-64 overflow-hidden cursor-pointer"
-                        onClick={() => navigate(`/product/${product._id}`)}
+                        onClick={() => navigate(`/${product._id}`)}
                     >
                       <img
                         src={product.images?.[0]?.url || "/placeholder.jpg"}
@@ -153,8 +153,8 @@ export default function ProductsPage() {
                       </h3>
                       
                       <button 
-                        onClick={() => navigate(`/product/${product._id}`)}
-                        className="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 shadow-lg shadow-stone-100 hover:shadow-red-100"
+                        onClick={() => navigate(`/${product._id}`)}
+                        className="cursor-pointer w-full py-4 bg-stone-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 shadow-lg shadow-stone-100 hover:shadow-red-100"
                       >
                         Voir détails <ChevronRight size={18} />
                       </button>
