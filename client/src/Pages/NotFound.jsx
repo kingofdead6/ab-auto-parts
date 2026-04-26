@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useContext } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LanguageContext } from "../Components/context/LanguageContext";
-import { translations } from "../../translations";
 
 export default function NotFound() {
-  const { lang } = useContext(LanguageContext);
-  const t = translations[lang]?.notFound || translations["fr"]?.notFound || {};
-  const isRTL = lang === "ar";
 
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-5 sm:px-8 lg:px-12 bg-white text-center"
-      dir={isRTL ? "rtl" : "ltr"}
     >
       {/* Animated 404 Number */}
       <motion.div
@@ -33,7 +27,7 @@ export default function NotFound() {
         transition={{ delay: 0.2, duration: 0.8 }}
         className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-stone-950 mb-4"
       >
-        {t.title || "Page Not Found"}
+        Page introuvable
       </motion.h1>
 
       <motion.p
@@ -42,8 +36,7 @@ export default function NotFound() {
         transition={{ delay: 0.4, duration: 0.8 }}
         className="text-lg sm:text-xl text-stone-600 max-w-2xl mb-10 leading-relaxed"
       >
-        {t.message ||
-          "The page you're looking for doesn't exist or has been moved. Let's get you back to shopping!"}
+        La page que vous recherchez n'existe pas ou a été déplacée. Retournons faire du shopping !
       </motion.p>
 
       {/* Back Button */}
@@ -53,10 +46,10 @@ export default function NotFound() {
         transition={{ delay: 0.6, duration: 0.8 }}
       >
         <Link
-          to="/products"
+          to="/"
           className="inline-flex items-center px-10 py-5 bg-stone-900 hover:bg-amber-800 text-white text-lg font-medium rounded-xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
         >
-          {t.backToCollection || "Back to Collection"}
+          Retour à la collection
         </Link>
       </motion.div>
 

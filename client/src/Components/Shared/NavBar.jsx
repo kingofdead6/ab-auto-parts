@@ -1,10 +1,9 @@
-// src/components/Navbar.jsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingCartIcon, XMarkIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { jwtDecode } from "jwt-decode";
-import Logo from "../../assets/Logo.png"; // Adjust path as needed
+import Logo from "../../assets/Logo.png"; 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userType, setUserType] = useState(null);

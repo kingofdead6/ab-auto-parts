@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../api";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search, Filter, ChevronRight, X, Car } from "lucide-react";
 
 export default function ProductsPage() {
   const [searchParams] = useSearchParams();
@@ -13,239 +14,156 @@ export default function ProductsPage() {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [selectedCar, setSelectedCar] = useState("Tous les véhicules");
   const [availableCars, setAvailableCars] = useState([]);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-
   const productsPerPage = 9;
 
-  // Sync URL params
   useEffect(() => {
     const carFromUrl = searchParams.get("car");
     const searchFromUrl = searchParams.get("search");
-
     if (carFromUrl) setSelectedCar(carFromUrl);
     if (searchFromUrl) setSearchTerm(searchFromUrl);
   }, [searchParams]);
 
-  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/products`);
         const allProducts = res.data || [];
-
         setProducts(allProducts);
-
-        const uniqueCars = [
-          ...new Set(allProducts.map((p) => p.CarType).filter(Boolean)),
-        ];
-
+        const uniqueCars = [...new Set(allProducts.map((p) => p.CarType).filter(Boolean))];
         setAvailableCars(["Tous les véhicules", ...uniqueCars.sort()]);
       } catch (err) {
-        toast.error("Erreur lors du chargement des produits");
+        toast.error("Erreur de chargement");
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
-  // Handle filters
-  const handleCarChange = (car) => {
-    setSelectedCar(car);
-    setCurrentPage(1);
-
-    updateURL(car, searchTerm);
-  };
-
-  const handleSearch = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-
-    updateURL(selectedCar, value);
-  };
-
   const updateURL = (car, search) => {
     const params = new URLSearchParams();
-
-    if (car && car !== "Tous les véhicules") {
-      params.set("car", car);
-    }
-
-    if (search) {
-      params.set("search", search);
-    }
-
+    if (car && car !== "Tous les véhicules") params.set("car", car);
+    if (search) params.set("search", search);
     navigate(`?${params.toString()}`, { replace: true });
   };
 
-  // Filtering logic
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      const matchCar =
-        selectedCar === "Tous les véhicules" || p.CarType === selectedCar;
-
-      const matchSearch =
-        p.name.toLowerCase().includes(searchTerm.toLowerCase());
-
+      const matchCar = selectedCar === "Tous les véhicules" || p.CarType === selectedCar;
+      const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchCar && matchSearch;
     });
   }, [products, selectedCar, searchTerm]);
 
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const displayedProducts = filteredProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
 
-  const displayedProducts = filteredProducts.slice(
-    (currentPage - 1) * productsPerPage,
-    currentPage * productsPerPage
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      <p className="mt-4 text-gray-500 font-light tracking-widest uppercase text-xs">Chargement</p>
+    </div>
   );
 
-  const clearFilters = () => {
-    setSelectedCar("Tous les véhicules");
-    setSearchTerm("");
-    setCurrentPage(1);
-  };
-
-  const hasActiveFilter =
-    selectedCar !== "Tous les véhicules" || searchTerm !== "";
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Chargement...
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-stone-50 py-20">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-stone-50 pb-20">
+      <div className="max-w-7xl mx-auto px-6">
+        
+        {/* MODERN HEADER */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between py-12 gap-6">
+          <div>
+            <h1 className="text-5xl font-black text-stone-900 tracking-tighter italic uppercase">
+              Pièces <span className="text-red-600">Pro</span>
+            </h1>
+            <p className="text-stone-500 font-medium mt-2 flex items-center gap-2">
+              <span className="w-8 h-[2px] bg-red-600"></span>
+              {filteredProducts.length} Pièces disponibles
+            </p>
+          </div>
 
-        {/* HEADER */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold">Pièces automobiles</h1>
-
-          <p className="text-stone-600 mt-2">
-            {filteredProducts.length} résultat
-            {filteredProducts.length > 1 ? "s" : ""}
-          </p>
-
-          {/* SEARCH */}
-          <div className="mt-6">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 group-focus-within:text-red-600 transition-colors" size={20} />
             <input
               type="text"
-              placeholder="Rechercher une pièce (ex: filtre, moteur...)"
+              placeholder="Référence ou nom..."
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full md:w-96 px-5 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-red-500"
+              onChange={(e) => {setSearchTerm(e.target.value); updateURL(selectedCar, e.target.value);}}
+              className="w-full md:w-80 pl-12 pr-5 py-4 rounded-2xl bg-white border-none shadow-sm focus:ring-2 focus:ring-red-600 transition-all outline-none"
             />
           </div>
         </div>
 
-        <div className="flex gap-10">
-
+        <div className="flex flex-col lg:flex-row gap-12">
           {/* SIDEBAR */}
-          <aside className="hidden lg:block w-64">
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
-              <h3 className="font-semibold mb-4">Véhicules</h3>
-
-              {availableCars.map((car) => (
-                <button
-                  key={car}
-                  onClick={() => handleCarChange(car)}
-                  className={`block w-full text-left px-4 py-2 rounded-lg mb-1 ${
-                    selectedCar === car
-                      ? "bg-red-600 text-white"
-                      : "hover:bg-gray-100"
-                  }`}
-                >
-                  {car}
-                </button>
-              ))}
-
-              {hasActiveFilter && (
-                <button
-                  onClick={clearFilters}
-                  className="mt-4 text-red-600"
-                >
-                  Réinitialiser
-                </button>
-              )}
+          <aside className="w-full lg:w-72 space-y-8">
+            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-stone-100">
+              <div className="flex items-center gap-2 mb-6 text-stone-900 font-bold uppercase tracking-wider text-sm">
+                <Filter size={16} className="text-red-600" /> Filtrer par véhicule
+              </div>
+              <div className="space-y-2">
+                {availableCars.map((car) => (
+                  <button
+                    key={car}
+                    onClick={() => {setSelectedCar(car); updateURL(car, searchTerm);}}
+                    className={`flex items-center justify-between w-full text-left px-5 py-3 rounded-xl transition-all duration-300 font-medium ${
+                      selectedCar === car ? "bg-red-600 text-white shadow-lg shadow-red-200 scale-105" : "text-stone-500 hover:bg-stone-50"
+                    }`}
+                  >
+                    {car}
+                    {selectedCar === car && <ChevronRight size={16} />}
+                  </button>
+                ))}
+              </div>
             </div>
           </aside>
 
-          {/* PRODUCTS */}
-          <main className="flex-1">
-            {displayedProducts.length === 0 ? (
-              <div className="text-center py-20">
-                Aucun produit trouvé
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  {displayedProducts.map((product) => (
-                    <motion.div
-                      key={product._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition"
+          {/* GRID */}
+          <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+              <AnimatePresence mode="popLayout">
+                {displayedProducts.map((product) => (
+                  <motion.div
+                    layout
+                    key={product._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="group bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-stone-100 hover:shadow-2xl hover:shadow-red-50 transition-all duration-500"
+                  >
+                    <div 
+                        className="relative h-64 overflow-hidden cursor-pointer"
+                        onClick={() => navigate(`/product/${product._id}`)}
                     >
-                      <Link to={`/${product._id}`}>
-                        <img
-                          src={product.images?.[0]?.url || "/placeholder.jpg"}
-                          alt={product.name}
-                          className="w-full h-48 object-cover"
-                        />
-                      </Link>
-
-                      <div className="p-4">
-                        <h3 className="font-semibold">
-                          {product.name}
-                        </h3>
-
-                        <p className="text-sm text-gray-500">
-                          {product.CarType}
-                        </p>
-
-                        <Link
-                          to={`/${product._id}`}
-                          className="text-red-600 text-sm mt-2 inline-block"
-                        >
-                          Voir détails →
-                        </Link>
+                      <img
+                        src={product.images?.[0]?.url || "/placeholder.jpg"}
+                        alt={product.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-red-600 shadow-sm">
+                        {product.CarType}
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
+                    </div>
 
-                {/* PAGINATION */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-10 gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (n) => (
-                        <button
-                          key={n}
-                          onClick={() => setCurrentPage(n)}
-                          className={`w-10 h-10 rounded-lg ${
-                            n === currentPage
-                              ? "bg-black text-white"
-                              : "border"
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      )
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </main>
+                    <div className="p-8">
+                      <h3 className="text-xl font-bold text-stone-900 mb-4 line-clamp-1 group-hover:text-red-600 transition-colors">
+                        {product.name}
+                      </h3>
+                      
+                      <button 
+                        onClick={() => navigate(`/product/${product._id}`)}
+                        className="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-red-600 transition-all duration-300 shadow-lg shadow-stone-100 hover:shadow-red-100"
+                      >
+                        Voir détails <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
     </div>

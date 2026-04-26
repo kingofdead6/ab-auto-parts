@@ -1,5 +1,5 @@
 // src/pages/admin/Login.jsx
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { FaEye, FaEyeSlash, FaUser, FaLock } from "react-icons/fa";
 import axios from "axios";
@@ -7,13 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API_BASE_URL } from "../../api";
-import { LanguageContext } from "../Components/context/LanguageContext";
-import { translations } from "../../translations";
 
 export default function Login() {
-  const { lang } = useContext(LanguageContext);
-  const t = translations[lang].adminLogin;
-  const isRTL = lang === "ar";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,10 +20,10 @@ export default function Login() {
 
   const validate = () => {
     const e = {};
-    if (!email.trim()) e.email = t.errorEmailRequired;
-    else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = t.errorEmailInvalid;
-    if (!password) e.password = t.errorPasswordRequired;
-    else if (password.length < 6) e.password = t.errorPasswordShort;
+    if (!email.trim()) e.email = "Veuillez saisir votre e-mail.";
+    else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Format d'e-mail invalide.";
+    if (!password) e.password = "Veuillez saisir votre mot de passe.";
+    else if (password.length < 6) e.password = "Le mot de passe doit contenir au moins 6 caractères.";
     return e;
   };
 
@@ -56,7 +51,7 @@ export default function Login() {
         window.dispatchEvent(new Event("authChanged"));
         setErrors({});
 
-        toast.success(lang === "fr" ? "Connexion réussie !" : "تم تسجيل الدخول بنجاح!");
+        toast.success("Connexion réussie !");
 
         if (usertype === "admin" || usertype === "superadmin") {
           navigate("/admin/dashboard");
@@ -64,7 +59,7 @@ export default function Login() {
           navigate("/");
         }
       } catch (error) {
-        const message = error.response?.data?.message || t.errorGeneric;
+        const message = error.response?.data?.message || "Échec de la connexion.";
         setErrors({ form: message });
         toast.error(message);
       } finally {
@@ -76,7 +71,6 @@ export default function Login() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 py-20 mt-10"
-      dir={isRTL ? "rtl" : "ltr"}
     >
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -92,7 +86,7 @@ export default function Login() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="text-5xl font-light tracking-wider text-gray-900"
           >
-            {t.welcome}
+            Bienvenue
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -100,7 +94,7 @@ export default function Login() {
             transition={{ delay: 0.5 }}
             className="mt-4 text-lg text-gray-600 font-light"
           >
-            {t.subtitle}
+            Connectez-vous pour accéder au panneau d'administration
           </motion.p>
         </div>
 
@@ -125,14 +119,12 @@ export default function Login() {
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                {t.emailLabel}
+                Adresse e-mail
               </label>
 
               <div className="relative">
                 <div
-                  className={`absolute inset-y-0 ${
-                    isRTL ? "end-0 pe-4" : "start-0 ps-4"
-                  } flex items-center pointer-events-none text-gray-500`}
+                  className="absolute inset-y-0 start-0 ps-4 flex items-center pointer-events-none text-gray-500"
                 >
                   <FaUser className="w-5 h-5" />
                 </div>
@@ -141,14 +133,12 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full ${
-                    isRTL ? "pr-4 pl-12" : "pl-12 pr-4"
-                  } py-4 rounded-xl border ${
-                    errors.email
-                      ? "border-red-500 focus:border-red-600"
-                      : "border-gray-300 focus:border-black"
-                  } focus:outline-none focus:ring-4 focus:ring-black/10 transition-all text-lg`}
-                  placeholder={t.emailPlaceholder}
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl border ${
+                      errors.email
+                        ? "border-red-500 focus:border-red-600"
+                        : "border-gray-300 focus:border-black"
+                    } focus:outline-none focus:ring-4 focus:ring-black/10 transition-all text-lg`}
+                  placeholder="admin@example.com"
                 />
               </div>
 
@@ -162,15 +152,13 @@ export default function Login() {
             {/* Password */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                {t.passwordLabel}
+                Mot de passe
               </label>
 
               <div className="relative">
                 {/* Lock icon */}
                 <div
-                  className={`absolute inset-y-0 ${
-                    isRTL ? "end-0 pe-4" : "start-0 ps-4"
-                  } flex items-center pointer-events-none text-gray-500`}
+                  className="absolute inset-y-0 start-0 ps-4 flex items-center pointer-events-none text-gray-500"
                 >
                   <FaLock className="w-5 h-5" />
                 </div>
@@ -179,24 +167,20 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full ${
-                    isRTL ? "pr-12 pl-12" : "pl-12 pr-12"
-                  } py-4 rounded-xl border ${
-                    errors.password
+                  className={`w-full pl-12 pr-12 py-4 rounded-xl border ${
+                    errors.password 
                       ? "border-red-500 focus:border-red-600"
                       : "border-gray-300 focus:border-black"
-                  } focus:outline-none focus:ring-4 focus:ring-black/10 transition-all text-lg`}
-                  placeholder={t.passwordPlaceholder}
+                   } focus:outline-none focus:ring-4 focus:ring-black/10 transition-all text-lg`}
+                  placeholder="••••••••"
                 />
 
                 {/* Eye icon */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`cursor-pointer absolute inset-y-0 flex items-center text-gray-500 hover:text-gray-700 transition ${
-                    isRTL ? "start-0 ps-4" : "end-0 pe-4"
-                  }`}
-                  title={showPassword ? t.hidePassword : t.showPassword}
+                  className="cursor-pointer absolute inset-y-0 end-0 pe-4 flex items-center text-gray-500 hover:text-gray-700 transition"
+                  title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
                   {showPassword ? (
                     <FaEyeSlash className="w-5 h-5" />
@@ -221,7 +205,7 @@ export default function Login() {
               whileTap={{ scale: 0.98 }}
               className="cursor-pointer w-full py-5 bg-black text-white text-xl font-bold rounded-2xl hover:bg-gray-900 disabled:bg-gray-400 transition-all shadow-lg"
             >
-              {loading ? t.signingIn : t.signIn}
+              {loading ? "Connexion en cours..." : "Se connecter"}
             </motion.button>
           </form>
         </motion.div>

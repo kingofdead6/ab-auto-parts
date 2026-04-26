@@ -1,36 +1,33 @@
 "use client";
 
-import React, { useState, useEffect, useContext } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../api";
 import { toast } from "react-toastify";
-import { ArrowLeft } from "lucide-react";
-import { LanguageContext } from "../context/LanguageContext";
-import { translations } from "../../../translations";
+import { ArrowLeft, ShoppingCart, Check, ChevronRight } from "lucide-react";
 
-const SimilarProductsGrid = ({ currentProductId, category }) => {
-  const { lang } = useContext(LanguageContext);
-  const t = translations[lang].productDetail || {};
-  const isRTL = lang === "ar";
-
+const SimilarProductsGrid = ({ currentProductId, carname }) => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSimilar = async () => {
-      if (!currentProductId || !category) return;
+      if (!currentProductId) return;
 
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/products?category=${encodeURIComponent(category)}`
-        );
+        // Fetch products filtered by the same carname if available
+        const url = carname 
+          ? `${API_BASE_URL}/products?carname=${encodeURIComponent(carname)}` 
+          : `${API_BASE_URL}/products`;
+          
+        const res = await axios.get(url);
 
-        // Filter out current product and limit to 6
         const filtered = res.data
           .filter(p => p._id !== currentProductId)
           .sort(() => 0.5 - Math.random())
-          .slice(0, 6);
+          .slice(0, 4); // Grid of 4 looks cleaner
 
         setSimilarProducts(filtered);
       } catch (err) {
@@ -41,51 +38,38 @@ const SimilarProductsGrid = ({ currentProductId, category }) => {
     };
 
     fetchSimilar();
-  }, [currentProductId, category]);
+  }, [currentProductId, carname]);
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="bg-stone-100 animate-pulse rounded-2xl aspect-square" />
-        ))}
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-stone-100 animate-pulse rounded-3xl aspect-[3/4]" />
+      ))}
+    </div>
+  );
 
   if (similarProducts.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 lg:gap-10" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
       {similarProducts.map(product => (
         <div
           key={product._id}
-          className="group bg-white rounded-2xl overflow-hidden border border-stone-100 hover:border-blue-500/50 transition-all duration-400 hover:shadow-xl hover:shadow-blue-100/30"
+          className="group cursor-pointer"
+          onClick={() => {
+            navigate(`/product/${product._id}`);
+            window.scrollTo(0, 0);
+          }}
         >
-          <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-[2rem] bg-stone-100 mb-4">
             <img
               src={product.images?.[0]?.url || "/placeholder.jpg"}
               alt={product.name}
-              className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-              loading="lazy"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          </Link>
-
-          <div className="p-5 sm:p-6">
-            <h3 className="text-base sm:text-lg font-light text-stone-800 line-clamp-2 min-h-[1.8em] leading-tight">
-              {product.name}
-            </h3>
-            <p className="text-xl sm:text-2xl font-medium text-blue-700 tracking-wide mt-1">
-              {product.price.toLocaleString()} DA
-            </p>
-
-            <Link to={`/product/${product._id}`}>
-              <button className="cursor-pointer mt-4 w-full py-3.5 bg-stone-900 hover:bg-blue-800 text-white text-sm font-medium rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
-                {t.viewDetails || "Voir Détails"}
-              </button>
-            </Link>
           </div>
+          <h3 className="font-bold text-stone-900 truncate">{product.name}</h3>
+
         </div>
       ))}
     </div>
@@ -93,10 +77,8 @@ const SimilarProductsGrid = ({ currentProductId, category }) => {
 };
 
 export default function ProductDetailsPage() {
-  const { lang } = useContext(LanguageContext);
-  const t = translations[lang].productDetail || {};
-  const isRTL = lang === "ar";
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,215 +90,95 @@ export default function ProductDetailsPage() {
     fetchProduct();
   }, [id]);
 
-  useEffect(() => {
-    const handleCartAdded = () => {
-      setShowAddedPopup(true);
-      setTimeout(() => setShowAddedPopup(false), 2800);
-    };
-    window.addEventListener("cartAdded", handleCartAdded);
-    return () => window.removeEventListener("cartAdded", handleCartAdded);
-  }, []);
-
   const fetchProduct = async () => {
     try {
+      setLoading(true);
       const res = await axios.get(`${API_BASE_URL}/products/${id}`);
       setProduct(res.data);
       setSelectedImageIndex(0);
     } catch (err) {
-      toast.error(t.notFound || "Produit non trouvé");
+      toast.error("Produit non trouvé");
+      navigate("/products");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-3xl font-light text-blue-800/80 animate-pulse tracking-wide">
-          {t.loading || "Chargement du produit..."}
-        </div>
-      </div>
-    );
-  }
 
-  if (!product || !product.images?.length) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-5 sm:px-8">
-        <p className="text-2xl font-light text-stone-500 text-center">
-          {t.notFound || "Produit non trouvé"}
-        </p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
 
-  const selectedImage = product.images[selectedImageIndex];
-
-  const handleAddToCart = () => {
-    const cartItem = {
-      productId: product._id,
-      name: product.name,
-      price: product.price,
-      image: selectedImage.url,
-      imageIndex: selectedImageIndex,
-      quantity: quantity,
-      addedAt: new Date().toISOString(),
-    };
-
-    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    const existingIndex = cart.findIndex(
-      item => item.productId === cartItem.productId && item.imageIndex === cartItem.imageIndex
-    );
-
-    if (existingIndex !== -1) {
-      cart[existingIndex].quantity += quantity;
-    } else {
-      cart.push(cartItem);
-    }
-
-    localStorage.setItem("cart", JSON.stringify(cart));
-    window.dispatchEvent(new Event("cartUpdated"));
-    window.dispatchEvent(new CustomEvent("cartAdded"));
-
-    toast.success(t.addedToCart || "Ajouté au panier !");
-    setQuantity(1);
-  };
+  if (!product) return null;
 
   return (
-    <div className="min-h-screen pt-24 pb-20" dir={isRTL ? "rtl" : "ltr"}>
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
-        {/* Back Button */}
-        <Link
-          to="/products"
-          className="inline-flex items-center gap-2 text-stone-600 hover:text-blue-800 mb-8 transition-colors text-base font-light tracking-wide"
+    <div className="min-h-screen bg-white pt-32 pb-20 px-6">
+      <div className="max-w-7xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-stone-400 hover:text-red-600 mb-12 uppercase tracking-widest font-black text-xs transition-colors"
         >
-          <ArrowLeft size={20} />
-          {t.backToShop || "Retour à la collection"}
-        </Link>
+          <ArrowLeft size={16} /> Retour
+        </button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          {/* Images Section */}
-          <div className="space-y-8">
-            {/* Main Image */}
-            <div className="relative rounded-2xl overflow-hidden bg-white border border-stone-100 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+          {/* IMAGE SECTION */}
+          <div className="space-y-6">
+            <div className="aspect-[4/5] rounded-[3rem] overflow-hidden bg-stone-50 border border-stone-100 shadow-sm">
               <img
-                src={selectedImage?.url || "/placeholder.jpg"}
+                src={product.images[selectedImageIndex]?.url}
                 alt={product.name}
-                className="w-full aspect-[4/5] sm:aspect-square lg:aspect-[5/6] object-cover object-center"
+                className="w-full h-full object-cover"
               />
             </div>
-
-            {/* Thumbnails */}
-            {product.images.length > 1 && (
-              <div className="overflow-x-auto pb-4 -mx-2 px-2">
-                <div className="flex gap-4 min-w-max">
-                  {product.images.map((img, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedImageIndex(i)}
-                      className={`shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border-2 transition-all ${
-                        selectedImageIndex === i
-                          ? "border-blue-700 shadow-md scale-105"
-                          : "border-stone-200 hover:border-stone-400"
-                      }`}
-                    >
-                      <img
-                        src={img.url}
-                        alt={`Vue ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {product.images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedImageIndex(i)}
+                  className={`w-24 h-24 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${
+                    selectedImageIndex === i ? "border-red-600 scale-105 shadow-md" : "border-transparent opacity-50"
+                  }`}
+                >
+                  <img src={img.url} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Product Info */}
-          <div className="space-y-10">
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-stone-950 leading-tight">
-                {product.name}
-              </h1>
-
-              <p className="text-3xl sm:text-4xl font-medium text-blue-700 tracking-wide">
-                {product.price.toLocaleString()} DA
-              </p>
-
-              <p className="text-lg text-stone-600">{product.category}</p>
-            </div>
-
-            {product.description && (
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-3">
-                  Description
-                </h3>
-                <p className="text-stone-600 leading-relaxed">{product.description}</p>
-              </div>
-            )}
-
-            {/* Quantity */}
-           {/*  <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-stone-500 mb-4">
-                {t.quantity || "Quantité"}
-              </h3>
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-12 h-12 rounded-xl border border-stone-300 text-stone-700 hover:border-blue-500 hover:text-blue-700 transition text-2xl flex items-center justify-center"
-                >
-                  −
-                </button>
-                <span className="text-3xl font-light w-16 text-center text-stone-900">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(q => q + 1)}
-                  className="w-12 h-12 rounded-xl border border-stone-300 text-stone-700 hover:border-blue-500 hover:text-blue-700 transition text-2xl flex items-center justify-center"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-           
-            <button
-              onClick={handleAddToCart}
-              className="w-full py-5 bg-stone-900 hover:bg-blue-800 text-white text-lg font-medium rounded-xl transition-all duration-300 shadow-md hover:shadow-lg"
-            >
-              {t.addToCart || "Ajouter au panier"}
-            </button> */}
+          {/* INFO SECTION */}
+          <div className="flex flex-col justify-center">
+            <span className="text-red-600 font-black uppercase tracking-[0.3em] text-sm mb-4">
+              {product.carname || "Véhicule"}
+            </span>
+            <h1 className="text-5xl lg:text-7xl font-black text-stone-900 leading-[0.9] italic uppercase mb-6 tracking-tighter">
+              {product.name}
+            </h1>
+     
           </div>
         </div>
 
-        {/* Similar Products */}
-        <div className="mt-24 lg:mt-32">
-          <h2 className="text-4xl sm:text-5xl font-light tracking-tight text-stone-950 text-center mb-12 lg:mb-16">
-            {t.youMightLike || "Vous pourriez aussi aimer"}
-          </h2>
-          <SimilarProductsGrid currentProductId={product._id} category={product.category} />
+        {/* SIMILAR SECTION */}
+        <div className="mt-40">
+            <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-12">
+                Produits <span className="text-red-600">Similaires</span>
+            </h2>
+            <SimilarProductsGrid currentProductId={product._id} carname={product.carname} />
         </div>
       </div>
 
-      {/* Added to Cart Popup */}
-      <div
-        className={`fixed inset-x-4 bottom-6 md:inset-x-auto md:bottom-10 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-500 pointer-events-none ${
-          showAddedPopup ? "translate-y-0 opacity-100" : "translate-y-24 opacity-0"
-        }`}
-      >
-        <div className="bg-stone-900 text-white px-5 py-4 md:px-7 md:py-5 rounded-2xl shadow-2xl flex items-center gap-4 md:gap-6 max-w-md mx-auto pointer-events-auto">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 border-blue-600/40 flex-shrink-0">
-            <img src={selectedImage?.url} alt="" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-base md:text-lg">{t.addedToCart || "Ajouté au panier !"}</p>
-            <p className="text-sm md:text-base opacity-90 truncate">
-              {product.name} × {quantity}
-            </p>
-          </div>
-          <svg className="w-7 h-7 md:w-8 md:h-8 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
+      {/* FIXED POPUP NOTIFICATION */}
+      <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ${showAddedPopup ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"}`}>
+        <div className="bg-stone-900 text-white px-8 py-5 rounded-[2rem] shadow-2xl flex items-center gap-6 border border-white/10 backdrop-blur-xl">
+            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+                <Check className="text-white" />
+            </div>
+            <div>
+                <p className="text-xs font-black uppercase tracking-widest text-stone-400">Succès</p>
+                <p className="font-bold">Ajouté au panier !</p>
+            </div>
         </div>
       </div>
     </div>
